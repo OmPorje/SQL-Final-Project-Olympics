@@ -96,9 +96,12 @@ CREATE TABLE Athletes (
     height_cm INT,                                     -- Height in centimeters
     weight_kg INT,                                     -- Weight in kilograms
     bio TEXT,                                          -- Short biography
-    FOREIGN KEY (country_id) REFERENCES Countries(country_id),
+    FOREIGN KEY (country_id) REFERENCES Countries(country_id)
+        ON UPDATE CASCADE ON DELETE CASCADE,
     FOREIGN KEY (sport_id) REFERENCES Sports(sport_id)
+        ON UPDATE CASCADE ON DELETE CASCADE
 );
+
 
 INSERT INTO Athletes (first_name, last_name, gender, date_of_birth, country_id, sport_id, height_cm, weight_kg, bio)
 VALUES
@@ -138,6 +141,7 @@ CREATE TABLE Olympics (
     number_of_athletes INT,                          -- Total participating athletes
     slogan VARCHAR(100),                             -- Official slogan or theme
     FOREIGN KEY (country_id) REFERENCES Countries(country_id)
+        ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 INSERT INTO Olympics (year, season, city, country_id, opening_date, closing_date, number_of_sports, number_of_athletes, slogan) 
@@ -166,19 +170,20 @@ VALUES
 SELECT * FROM Olympics;
 
 -- Table 5: Events
-CREATE TABLE Events (
-    event_id INT PRIMARY KEY AUTO_INCREMENT,         -- Unique ID for each event
-    event_name VARCHAR(100) NOT NULL,                -- Name of the event
-    sport_id INT NOT NULL,                           -- Linked sport
-    gender_category ENUM('Men', 'Women', 'Mixed'),   -- Gender category
-    event_type VARCHAR(50),                          -- Type (e.g., Final, Heats)
-    distance_or_weight VARCHAR(50),                  -- For measurable events (e.g., 100m, 75kg)
-    number_of_rounds INT,                            -- Total rounds (e.g., heats + finals)
-    scoring_method VARCHAR(50),                      -- Points, Time, Goals etc.
-    olympic_id INT,                                  -- Linked Olympic Games edition
-    venue_name VARCHAR(100),                         -- Venue/stadium where event is held
-    FOREIGN KEY (sport_id) REFERENCES Sports(sport_id),
-    FOREIGN KEY (olympic_id) REFERENCES Olympics(olympic_id)
+CREATE TABLE Olympics (
+    olympic_id INT PRIMARY KEY AUTO_INCREMENT,       -- Unique ID for each Olympic Games edition
+    year INT NOT NULL,                               -- Year of the Olympic Games
+    season ENUM('Summer', 'Winter') NOT NULL,        -- Season of the games
+    city VARCHAR(100) NOT NULL,                      -- Host city
+    country_id INT,                                  -- Host country
+    opening_date DATE,                               -- Opening ceremony date
+    closing_date DATE,                               -- Closing ceremony date
+    number_of_sports INT,                            -- Total sports included
+    number_of_athletes INT,                          -- Total participating athletes
+    slogan VARCHAR(100),                             -- Official slogan or theme
+    FOREIGN KEY (country_id) REFERENCES Countries(country_id)
+        ON UPDATE CASCADE 
+        ON DELETE CASCADE
 );
 
 INSERT INTO Events (
@@ -213,15 +218,19 @@ CREATE TABLE Venues (
     venue_id INT PRIMARY KEY AUTO_INCREMENT,         -- Unique ID for each venue
     venue_name VARCHAR(100) NOT NULL,                -- Name of the venue
     location VARCHAR(100),                           -- City or area where venue is located
-    capacity INT,                                     -- Seating/viewing capacity
+    capacity INT,                                    -- Seating/viewing capacity
     venue_type VARCHAR(50),                          -- Indoor, Outdoor, Aquatic, etc.
     surface_type VARCHAR(50),                        -- Grass, synthetic, ice, water, etc.
     construction_year INT,                           -- Year venue was built
     renovated_year INT,                              -- Year last renovated
     olympic_id INT,                                  -- Associated Olympic Games edition
-    country_id INT,                                   -- Host country
-    FOREIGN KEY (olympic_id) REFERENCES Olympics(olympic_id),
+    country_id INT,                                  -- Host country
+    FOREIGN KEY (olympic_id) REFERENCES Olympics(olympic_id)
+        ON UPDATE CASCADE 
+        ON DELETE CASCADE,
     FOREIGN KEY (country_id) REFERENCES Countries(country_id)
+        ON UPDATE CASCADE 
+        ON DELETE CASCADE
 );
 
 INSERT INTO Venues (venue_name, location, capacity, venue_type, surface_type, construction_year, renovated_year, olympic_id, country_id) 
@@ -261,9 +270,12 @@ CREATE TABLE Teams (
     team_captain VARCHAR(100),                      -- Name of the team captain (if applicable)
     team_coach VARCHAR(100),                        -- Name of the coach (if applicable)
     formation_year INT,                             -- Year when the team was formed
-    FOREIGN KEY (country_id) REFERENCES Countries(country_id),
-    FOREIGN KEY (olympic_id) REFERENCES Olympics(olympic_id),
+    FOREIGN KEY (country_id) REFERENCES Countries(country_id)
+        ON UPDATE CASCADE ON DELETE CASCADE,
+    FOREIGN KEY (olympic_id) REFERENCES Olympics(olympic_id)
+        ON UPDATE CASCADE ON DELETE CASCADE,
     FOREIGN KEY (sport_id) REFERENCES Sports(sport_id)
+        ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 INSERT INTO Teams (
@@ -295,23 +307,30 @@ SELECT * FROM Teams;
 
 -- Table 8: Medals
 CREATE TABLE Medals (
-    medal_id INT PRIMARY KEY AUTO_INCREMENT,           -- Unique ID for each medal entry
-    athlete_id INT NOT NULL,                           -- Athlete who won the medal
-    event_id INT NOT NULL,                             -- Event in which the medal was won
+    medal_id INT PRIMARY KEY AUTO_INCREMENT,              -- Unique ID for each medal entry
+    athlete_id INT NOT NULL,                              -- Athlete who won the medal
+    event_id INT NOT NULL,                                -- Event in which the medal was won
     medal_type ENUM('Gold', 'Silver', 'Bronze') NOT NULL, -- Type of medal
-    team_id INT,                                       -- Team associated with the medal (if any)
-    country_id INT NOT NULL,                           -- Country of the athlete/team
-    olympic_id INT NOT NULL,                           -- Olympics edition
-    medal_date DATE NOT NULL,                          -- Date of the medal win
-    event_category VARCHAR(100),                       -- Category like "Men's 100m"
-    venue_id INT,                                      -- Venue where the medal was awarded
-    FOREIGN KEY (athlete_id) REFERENCES Athletes(athlete_id),
-    FOREIGN KEY (event_id) REFERENCES Events(event_id),
-    FOREIGN KEY (team_id) REFERENCES Teams(team_id),
-    FOREIGN KEY (country_id) REFERENCES Countries(country_id),
-    FOREIGN KEY (olympic_id) REFERENCES Olympics(olympic_id),
+    team_id INT,                                          -- Team associated with the medal (if any)
+    country_id INT NOT NULL,                              -- Country of the athlete/team
+    olympic_id INT NOT NULL,                              -- Olympics edition
+    medal_date DATE NOT NULL,                             -- Date of the medal win
+    event_category VARCHAR(100),                          -- Category like "Men's 100m"
+    venue_id INT,                                         -- Venue where the medal was awarded
+    FOREIGN KEY (athlete_id) REFERENCES Athletes(athlete_id)
+        ON UPDATE CASCADE ON DELETE CASCADE,
+    FOREIGN KEY (event_id) REFERENCES Events(event_id)
+        ON UPDATE CASCADE ON DELETE CASCADE,
+    FOREIGN KEY (team_id) REFERENCES Teams(team_id)
+        ON UPDATE CASCADE ON DELETE CASCADE,
+    FOREIGN KEY (country_id) REFERENCES Countries(country_id)
+        ON UPDATE CASCADE ON DELETE CASCADE,
+    FOREIGN KEY (olympic_id) REFERENCES Olympics(olympic_id)
+        ON UPDATE CASCADE ON DELETE CASCADE,
     FOREIGN KEY (venue_id) REFERENCES Venues(venue_id)
+        ON UPDATE CASCADE ON DELETE CASCADE
 );
+
 drop table Medals;
 
 INSERT INTO Medals (athlete_id, event_id, medal_type, team_id, country_id, olympic_id, medal_date, event_category, venue_id
@@ -339,7 +358,7 @@ INSERT INTO Medals (athlete_id, event_id, medal_type, team_id, country_id, olymp
 
 SELECT * FROM Medals;
 
--- Table 9: 
+-- Table 9: Coaches
 CREATE TABLE Coaches (
     coach_id INT PRIMARY KEY AUTO_INCREMENT,              -- Unique ID for each coach
     first_name VARCHAR(50) NOT NULL,                      -- Coach's first name
@@ -351,10 +370,14 @@ CREATE TABLE Coaches (
     team_id INT,                                          -- Team they are assigned to (nullable)
     years_of_experience INT NOT NULL,                     -- Coaching experience in years
     certification_level VARCHAR(50),                      -- Certification level (e.g., "Level A")
-    FOREIGN KEY (country_id) REFERENCES Countries(country_id),
-    FOREIGN KEY (sport_id) REFERENCES Sports(sport_id),
+    FOREIGN KEY (country_id) REFERENCES Countries(country_id)
+        ON UPDATE CASCADE ON DELETE CASCADE,
+    FOREIGN KEY (sport_id) REFERENCES Sports(sport_id)
+        ON UPDATE CASCADE ON DELETE CASCADE,
     FOREIGN KEY (team_id) REFERENCES Teams(team_id)
+        ON UPDATE CASCADE ON DELETE CASCADE
 );
+
 
 INSERT INTO Coaches (
     first_name, last_name, gender, date_of_birth, country_id, 
@@ -395,9 +418,12 @@ CREATE TABLE Stadiums (
     is_main_stadium BOOLEAN DEFAULT FALSE,                  -- Whether it was the main Olympic stadium
     surface_type VARCHAR(50),                               -- Type of surface (e.g., Grass, Synthetic)
     olympic_id INT NOT NULL,                                -- Olympic edition associated
-    FOREIGN KEY (country_id) REFERENCES Countries(country_id),
+    FOREIGN KEY (country_id) REFERENCES Countries(country_id)
+        ON UPDATE CASCADE ON DELETE CASCADE,
     FOREIGN KEY (olympic_id) REFERENCES Olympics(olympic_id)
+        ON UPDATE CASCADE ON DELETE CASCADE
 );
+
 
 INSERT INTO Stadiums (
     stadium_name, city, country_id, capacity, year_built,
@@ -436,11 +462,14 @@ CREATE TABLE Sponsors (
     contact_phone VARCHAR(20),                                -- Contact phone number
     amount_sponsored DECIMAL(15, 2) NOT NULL,                 -- Total amount sponsored
     olympic_id INT NOT NULL,                                  -- Linked Olympic edition (FK)
-    sponsored_entity_type ENUM('Team', 'Athlete', 'Event'),  -- What they are sponsoring
+    sponsored_entity_type ENUM('Team', 'Athlete', 'Event'),   -- What they are sponsoring
     sponsored_entity_id INT NOT NULL,                         -- ID of the entity they are sponsoring
-    FOREIGN KEY (country_id) REFERENCES Countries(country_id),
+    FOREIGN KEY (country_id) REFERENCES Countries(country_id)
+        ON UPDATE CASCADE ON DELETE CASCADE,
     FOREIGN KEY (olympic_id) REFERENCES Olympics(olympic_id)
+        ON UPDATE CASCADE ON DELETE CASCADE
 );
+
 
 INSERT INTO Sponsors (sponsor_name, sponsor_type, country_id, contact_email, contact_phone, amount_sponsored, olympic_id, sponsored_entity_type, sponsored_entity_id) 
 VALUES
@@ -479,11 +508,16 @@ CREATE TABLE Matches (
     venue_id INT NOT NULL,                                 -- Venue where match was held (FK)
     winner_team_id INT,                                    -- Winning team (FK, nullable)
     match_status ENUM('Scheduled', 'Completed', 'Cancelled') DEFAULT 'Scheduled',  -- Status of match
-    FOREIGN KEY (event_id) REFERENCES Events(event_id),
-    FOREIGN KEY (team1_id) REFERENCES Teams(team_id),
-    FOREIGN KEY (team2_id) REFERENCES Teams(team_id),
-    FOREIGN KEY (venue_id) REFERENCES Venues(venue_id),
+    FOREIGN KEY (event_id) REFERENCES Events(event_id)
+        ON UPDATE CASCADE ON DELETE CASCADE,
+    FOREIGN KEY (team1_id) REFERENCES Teams(team_id)
+        ON UPDATE CASCADE ON DELETE CASCADE,
+    FOREIGN KEY (team2_id) REFERENCES Teams(team_id)
+        ON UPDATE CASCADE ON DELETE CASCADE,
+    FOREIGN KEY (venue_id) REFERENCES Venues(venue_id)
+        ON UPDATE CASCADE ON DELETE CASCADE,
     FOREIGN KEY (winner_team_id) REFERENCES Teams(team_id)
+        ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 INSERT INTO Matches (event_id, team1_id, team2_id, match_date, start_time, end_time, venue_id, winner_team_id, match_status
@@ -523,9 +557,12 @@ CREATE TABLE Broadcasts (
     end_time TIME,                                         -- End time
     platform ENUM('TV', 'Online', 'Radio') DEFAULT 'TV',   -- Broadcast platform
     viewership_estimate INT,                               -- Estimated number of viewers
-    FOREIGN KEY (event_id) REFERENCES Events(event_id),
+    FOREIGN KEY (event_id) REFERENCES Events(event_id)
+        ON UPDATE CASCADE ON DELETE CASCADE,
     FOREIGN KEY (country_id) REFERENCES Countries(country_id)
+        ON UPDATE CASCADE ON DELETE CASCADE
 );
+
 
 INSERT INTO Broadcasts (event_id, broadcaster_name, country_id, language, broadcast_date, start_time, end_time, platform, viewership_estimate) 
 VALUES
@@ -564,10 +601,14 @@ CREATE TABLE Referees (
     contact_email VARCHAR(100),                           -- Contact email
     assigned_event_id INT,                                -- Event referee is assigned to (FK)
     status ENUM('Active', 'Retired', 'Suspended') DEFAULT 'Active',  -- Current status
-    FOREIGN KEY (nationality_id) REFERENCES Countries(country_id),
-    FOREIGN KEY (sport_id) REFERENCES Sports(sport_id),
+    FOREIGN KEY (nationality_id) REFERENCES Countries(country_id)
+        ON UPDATE CASCADE ON DELETE CASCADE,
+    FOREIGN KEY (sport_id) REFERENCES Sports(sport_id)
+        ON UPDATE CASCADE ON DELETE CASCADE,
     FOREIGN KEY (assigned_event_id) REFERENCES Events(event_id)
+        ON UPDATE CASCADE ON DELETE CASCADE
 );
+
 
 INSERT INTO Referees (full_name, gender, nationality_id, experience_years, sport_id, certified, contact_email, assigned_event_id, status
 ) VALUES
@@ -605,10 +646,14 @@ CREATE TABLE Schedules (
     end_time TIME,                                           -- Event end time
     status ENUM('Scheduled', 'Completed', 'Cancelled') DEFAULT 'Scheduled', -- Status
     session VARCHAR(50),                                     -- Morning / Afternoon / Evening
-    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, -- Last updated
-    FOREIGN KEY (event_id) REFERENCES Events(event_id),
-    FOREIGN KEY (sport_id) REFERENCES Sports(sport_id),
+    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP 
+        ON UPDATE CURRENT_TIMESTAMP,                         -- Last updated
+    FOREIGN KEY (event_id) REFERENCES Events(event_id)
+        ON UPDATE CASCADE ON DELETE CASCADE,
+    FOREIGN KEY (sport_id) REFERENCES Sports(sport_id)
+        ON UPDATE CASCADE ON DELETE CASCADE,
     FOREIGN KEY (venue_id) REFERENCES Venues(venue_id)
+        ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 INSERT INTO Schedules (event_id, sport_id, venue_id, scheduled_date,start_time, end_time, status, session) 
@@ -648,9 +693,12 @@ CREATE TABLE Judges (
     is_chief_judge BOOLEAN DEFAULT FALSE,                  -- Whether the judge is a chief judge
     assigned_event_id INT,                                 -- Event they are judging (FK to Events)
     status ENUM('Active', 'Retired', 'Suspended') DEFAULT 'Active', -- Current status
-    FOREIGN KEY (nationality_id) REFERENCES Countries(country_id),
-    FOREIGN KEY (sport_id) REFERENCES Sports(sport_id),
+    FOREIGN KEY (nationality_id) REFERENCES Countries(country_id)
+        ON UPDATE CASCADE ON DELETE CASCADE,
+    FOREIGN KEY (sport_id) REFERENCES Sports(sport_id)
+        ON UPDATE CASCADE ON DELETE CASCADE,
     FOREIGN KEY (assigned_event_id) REFERENCES Events(event_id)
+        ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 INSERT INTO Judges (
@@ -692,10 +740,14 @@ CREATE TABLE Scores (
     score_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,        -- Timestamp when score was given
     remarks VARCHAR(255),                                  -- Remarks from the judge
     status ENUM('Submitted', 'Reviewed', 'Final') DEFAULT 'Submitted', -- Score status
-    FOREIGN KEY (athlete_id) REFERENCES Athletes(athlete_id),
-    FOREIGN KEY (judge_id) REFERENCES Judges(judge_id),
+    FOREIGN KEY (athlete_id) REFERENCES Athletes(athlete_id)
+        ON UPDATE CASCADE ON DELETE CASCADE,
+    FOREIGN KEY (judge_id) REFERENCES Judges(judge_id)
+        ON UPDATE CASCADE ON DELETE CASCADE,
     FOREIGN KEY (event_id) REFERENCES Events(event_id)
+        ON UPDATE CASCADE ON DELETE CASCADE
 );
+
 
 INSERT INTO Scores (athlete_id, judge_id, event_id, score, score_type, remarks, status) 
 VALUES
@@ -724,18 +776,20 @@ SELECT * FROM Scores;
 
 -- Table 18: Ticket Sales
 CREATE TABLE ticket_sales (
-    ticket_id INT PRIMARY KEY AUTO_INCREMENT,            -- Unique ticket ID
-    event_id INT NOT NULL,                               -- Linked event (FK)
-    buyer_name VARCHAR(100),                             -- Name of the ticket buyer
-    buyer_email VARCHAR(100),                            -- Email of the buyer
-    ticket_type ENUM('Regular', 'VIP', 'Student'),       -- Type of ticket
-    purchase_date DATE,                                  -- Date of purchase
-    seat_number VARCHAR(20),                             -- Assigned seat
-    price DECIMAL(8,2),                                  -- Price of the ticket
-    payment_status ENUM('Paid', 'Pending', 'Cancelled'),-- Payment status
-    sale_channel ENUM('Online', 'Onsite'),               -- Where the ticket was sold
+    ticket_id INT PRIMARY KEY AUTO_INCREMENT,              -- Unique ticket ID
+    event_id INT NOT NULL,                                 -- Linked event (FK)
+    buyer_name VARCHAR(100),                               -- Name of the ticket buyer
+    buyer_email VARCHAR(100),                              -- Email of the buyer
+    ticket_type ENUM('Regular', 'VIP', 'Student'),         -- Type of ticket
+    purchase_date DATE,                                    -- Date of purchase
+    seat_number VARCHAR(20),                               -- Assigned seat
+    price DECIMAL(8,2),                                    -- Price of the ticket
+    payment_status ENUM('Paid', 'Pending', 'Cancelled'),   -- Payment status
+    sale_channel ENUM('Online', 'Onsite'),                 -- Where the ticket was sold
     FOREIGN KEY (event_id) REFERENCES events(event_id)
+        ON UPDATE CASCADE ON DELETE CASCADE
 );
+
 
 INSERT INTO ticket_sales (event_id, buyer_name, buyer_email, ticket_type, purchase_date, seat_number, price, payment_status, sale_channel) 
 VALUES
@@ -774,9 +828,12 @@ CREATE TABLE ceremonies (
     host_country VARCHAR(100),                                -- Host country
     main_performer VARCHAR(100),                              -- Chief performer
     theme VARCHAR(255),                                       -- Ceremony theme
-    FOREIGN KEY (olympic_id) REFERENCES olympics(olympic_id),
+    FOREIGN KEY (olympic_id) REFERENCES olympics(olympic_id)
+        ON UPDATE CASCADE ON DELETE CASCADE,
     FOREIGN KEY (venue_id) REFERENCES venues(venue_id)
+        ON UPDATE CASCADE ON DELETE CASCADE
 );
+
 
 INSERT INTO ceremonies (olympic_id, ceremony_type, ceremony_date, start_time, end_time, venue_id, host_country, main_performer, theme) 
 VALUES
@@ -816,6 +873,7 @@ CREATE TABLE medical_records (
     follow_up_required BOOLEAN,                              -- Follow-up needed?
     notes TEXT,                                              -- Additional notes
     FOREIGN KEY (athlete_id) REFERENCES athletes(athlete_id)
+        ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 INSERT INTO medical_records (athlete_id, checkup_date, injury_description, treatment_given,doctor_name, hospital_name, fitness_clearance, follow_up_required, notes) 
@@ -855,10 +913,14 @@ CREATE TABLE training_sessions (
     location VARCHAR(100),                                  -- Training location
     intensity_level ENUM('Low', 'Medium', 'High'),          -- Session intensity
     notes TEXT,                                             -- Additional notes
-    FOREIGN KEY (athlete_id) REFERENCES athletes(athlete_id),
-    FOREIGN KEY (coach_id) REFERENCES coaches(coach_id),
+    FOREIGN KEY (athlete_id) REFERENCES athletes(athlete_id)
+        ON UPDATE CASCADE ON DELETE CASCADE,
+    FOREIGN KEY (coach_id) REFERENCES coaches(coach_id)
+        ON UPDATE CASCADE ON DELETE CASCADE,
     FOREIGN KEY (sport_id) REFERENCES sports(sport_id)
+        ON UPDATE CASCADE ON DELETE CASCADE
 );
+
 
 INSERT INTO training_sessions (athlete_id, coach_id, sport_id, session_date,start_time, end_time, location, intensity_level, notes) 
 VALUES
