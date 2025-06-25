@@ -3225,6 +3225,124 @@ SELECT ss.staff_id, ss.full_name, sp.supervisor_name
 FROM supervisors sp
 LEFT JOIN security_staff ss ON sp.supervisor_name = ss.supervisor_name;
 
+-- Table 24: Media Coverage
+-- 1. Reporters who covered events after the latest coverage date
+SELECT reporter_name, event_covered
+FROM media_coverage
+WHERE coverage_date > (
+    SELECT MAX(coverage_date) - INTERVAL 1 DAY FROM media_coverage
+);
+
+-- 2. Media houses with more than one coverage
+SELECT media_house
+FROM media_coverage
+WHERE media_house IN (
+    SELECT media_house FROM media_coverage GROUP BY media_house HAVING COUNT(*) > 1
+);
+
+-- 3. Events covered by the same media house that did the earliest coverage
+SELECT event_covered
+FROM media_coverage
+WHERE media_house = (
+    SELECT media_house FROM media_coverage ORDER BY coverage_date ASC LIMIT 1
+);
+
+-- 4. Reporters who covered the same event as ‘John Doe’
+SELECT reporter_name
+FROM media_coverage
+WHERE event_covered = (
+    SELECT event_covered FROM media_coverage WHERE reporter_name = 'John Doe' LIMIT 1
+);
+
+-- 5. Media coverages not in English
+SELECT * FROM media_coverage
+WHERE language != (
+    SELECT language FROM media_coverage WHERE coverage_id = 1
+);
+
+-- 6. Join media_coverage with accreditation to check valid credentials
+SELECT m.reporter_name, m.event_covered, a.valid_until
+FROM media_coverage m
+JOIN accreditation a ON m.accreditation_id = a.accreditation_id;
+
+-- 7. Join media_coverage with events table to get sport info
+SELECT m.event_covered, e.sport_id
+FROM media_coverage m
+JOIN events e ON m.event_covered = e.event_name;
+
+-- 8. Join and filter only valid media coverages
+SELECT m.media_house, m.coverage_type, a.valid_until
+FROM media_coverage m
+JOIN accreditation a ON m.accreditation_id = a.accreditation_id
+WHERE a.valid_until >= CURDATE();
+
+-- 9. Count of coverages per sport using JOIN with events
+SELECT e.sport_id, COUNT(*) AS coverage_count
+FROM media_coverage m
+JOIN events e ON m.event_covered = e.event_name
+GROUP BY e.sport_id;
+
+-- 10. Media house and accreditation status
+SELECT m.media_house, m.accreditation_id, IF(a.valid_until >= CURDATE(), 'Valid', 'Expired') AS status
+FROM media_coverage m
+LEFT JOIN accreditation a ON m.accreditation_id = a.accreditation_id;
+
+-- 11. Count of each type of coverage
+SELECT coverage_type, COUNT(*) AS total
+FROM media_coverage
+GROUP BY coverage_type;
+
+-- 12. Uppercase media house names
+SELECT UPPER(media_house) AS media_house_upper
+FROM media_coverage;
+
+-- 13. Day of week when coverage was done
+SELECT reporter_name, DAYNAME(coverage_date) AS coverage_day
+FROM media_coverage;
+
+-- 14. First 5 characters of event name
+SELECT event_covered, LEFT(event_covered, 5) AS short_event
+FROM media_coverage;
+
+-- 15. Country-wise total coverages
+SELECT country, COUNT(*) AS total_coverages
+FROM media_coverage
+GROUP BY country
+ORDER BY total_coverages DESC;
+
+-- 16. Function to get formatted reporter name with media house
+DELIMITER //
+CREATE FUNCTION getReporterTag(name VARCHAR(100), media VARCHAR(100))
+RETURNS VARCHAR(200)
+DETERMINISTIC
+BEGIN
+  RETURN CONCAT(name, ' @ ', media);
+END;
+//
+DELIMITER ;
+
+-- 16. Tag for each reporter
+SELECT getReporterTag(reporter_name, media_house) AS reporter_tag
+FROM media_coverage;
+
+-- 17. Tag only for live coverage
+SELECT getReporterTag(reporter_name, media_house) AS live_reporter
+FROM media_coverage
+WHERE coverage_type = 'Live';
+
+-- 18. Tag reporters by channel and language
+SELECT getReporterTag(reporter_name, broadcast_channel) AS channel_tag, language
+FROM media_coverage;
+
+-- 19. Group tags by country
+SELECT country, getReporterTag(reporter_name, media_house) AS tagged
+FROM media_coverage
+ORDER BY country;
+
+-- 20. List unique tags
+SELECT DISTINCT getReporterTag(reporter_name, media_house) AS unique_tags
+FROM media_coverage;
+
 -- Table 25: Doping Test
 -- 1. Subquery: Tests with positive results
 SELECT * FROM doping_tests
@@ -3360,5 +3478,3 @@ SELECT dt1.test_id, dt2.test_id, dt1.athlete_id, dt1.test_date, dt1.sample_type 
 FROM doping_tests dt1
 JOIN doping_tests dt2 ON dt1.athlete_id = dt2.athlete_id AND dt1.test_date = dt2.test_date AND dt1.sample_type <> dt2.sample_type;
 
-
--- Table 25: Training Sessions
