@@ -170,21 +170,27 @@ VALUES
 SELECT * FROM Olympics;
 
 -- Table 5: Events
-CREATE TABLE Olympics (
-    olympic_id INT PRIMARY KEY AUTO_INCREMENT,       -- Unique ID for each Olympic Games edition
-    year INT NOT NULL,                               -- Year of the Olympic Games
-    season ENUM('Summer', 'Winter') NOT NULL,        -- Season of the games
-    city VARCHAR(100) NOT NULL,                      -- Host city
-    country_id INT,                                  -- Host country
-    opening_date DATE,                               -- Opening ceremony date
-    closing_date DATE,                               -- Closing ceremony date
-    number_of_sports INT,                            -- Total sports included
-    number_of_athletes INT,                          -- Total participating athletes
-    slogan VARCHAR(100),                             -- Official slogan or theme
-    FOREIGN KEY (country_id) REFERENCES Countries(country_id)
-        ON UPDATE CASCADE 
+CREATE TABLE Events (
+    event_id INT PRIMARY KEY AUTO_INCREMENT,         -- Unique ID for each event
+    event_name VARCHAR(100) NOT NULL,                -- Name of the event
+    sport_id INT NOT NULL,                           -- Linked sport
+    gender_category ENUM('Men', 'Women', 'Mixed'),   -- Gender category
+    event_type VARCHAR(50),                          -- Type (e.g., Final, Heats)
+    distance_or_weight VARCHAR(50),                  -- For measurable events (e.g., 100m, 75kg)
+    number_of_rounds INT,                            -- Total rounds (e.g., heats + finals)
+    scoring_method VARCHAR(50),                      -- Points, Time, Goals etc.
+    olympic_id INT,                                  -- Linked Olympic Games edition
+    venue_name VARCHAR(100),                         -- Venue/stadium where event is held
+    
+    FOREIGN KEY (sport_id) REFERENCES Sports(sport_id)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE,
+
+    FOREIGN KEY (olympic_id) REFERENCES Olympics(olympic_id)
+        ON UPDATE CASCADE
         ON DELETE CASCADE
 );
+
 
 INSERT INTO Events (
     event_name, sport_id, gender_category, event_type, distance_or_weight,
