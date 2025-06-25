@@ -79,10 +79,9 @@ END;
 //
 DELIMITER ;
 
--- 10. Call the procedure
 CALL add_country('Wakanda', 'WAK', 'Africa', 5000000, 10000000000.00, 'Birnin Zana', 'Xhosa', 'UTC+2', 'https://wakanda.flag');
 
--- 11. Procedure to update GDP of a country
+-- 10. Procedure to update GDP of a country
 DELIMITER //
 CREATE PROCEDURE update_gdp(IN cid INT, IN new_gdp DECIMAL(20,2))
 BEGIN
@@ -91,8 +90,22 @@ END;
 //
 DELIMITER ;
 
--- 12. Call update procedure
 CALL update_gdp(1, 1500000000000.00);
+
+-- 11. Rank countries by GDP within each continent (highest GDP gets rank 1)
+SELECT 
+    country_name,
+    continent,
+    gdp,
+    RANK() OVER (PARTITION BY continent ORDER BY gdp DESC) AS gdp_rank_in_continent
+FROM Countries;
+
+-- 12. Calculate each country's GDP as a percentage of the total GDP
+SELECT 
+    country_name,
+    gdp,
+    ROUND((gdp / SUM(gdp) OVER ()) * 100, 2) AS gdp_percentage_of_world
+FROM Countries;
 
 -- 13. Grant SELECT access on Countries to user 'analyst'
 GRANT SELECT ON Countries TO 'analyst'@'localhost';
@@ -227,10 +240,9 @@ END;
 //
 DELIMITER ;
 
--- 10. Call procedure to add a sample sport
 CALL add_sport('Laser Tag', 'Combat', 1, 2024, 'Laser Gun, Vest', 'Indoor', 30, 'Points', 'World Laser Federation');
 
--- 11. Procedure to update sport duration
+-- 10. Procedure to update sport duration
 DELIMITER //
 CREATE PROCEDURE update_duration(IN sportID INT, IN new_duration INT)
 BEGIN
@@ -239,7 +251,8 @@ END;
 //
 DELIMITER ;
 
--- 12. Call procedure to update duration
+-- 11.
+-- 12.
 CALL update_duration(1, 90);
 
 -- 13. Grant SELECT access to 'coach' user
