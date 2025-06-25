@@ -138,12 +138,12 @@ SELECT a.athlete_id,a.first_name,a.last_name,s.sport_name
 FROM Athletes a
 LEFT JOIN Sports s ON a.sport_id = s.sport_id;
 
--- 3. RIGHT JOIN: All Sports and any Athletes who play them
+-- 18. RIGHT JOIN: All Sports and any Athletes who play them
 SELECT s.sport_name, a.athlete_id, a.first_name, a.last_name
 FROM Athletes a
 RIGHT JOIN Sports s ON a.sport_id = s.sport_id;
 
--- 4. FULL OUTER JOIN (Simulated using UNION in MySQL)
+-- 19. FULL OUTER JOIN (Simulated using UNION in MySQL)
 SELECT a.athlete_id, a.first_name, a.last_name, s.sport_name
 FROM Athletes a
 LEFT JOIN Sports s ON a.sport_id = s.sport_id
@@ -209,8 +209,6 @@ SELECT NOW();
 
 -- 10. Get length of governing body name
 SELECT sport_name, LENGTH(governing_body) AS body_name_length FROM Sports;
-
-DELIMITER //
 
 -- 11. Convert minutes to hours
 DELIMITER //
