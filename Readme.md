@@ -29,9 +29,9 @@ This project simulates the backend database system of the Olympic Games. It incl
 
 ### 🔹 Phase 2 – Expanded Database & Intermediate Queries
 - Wrote 250+ queries including:
-  - Aggregations, filtering, subqueries, JOINs
   - Table updates and deletes (DML)
   - Data type changes and column modifications (DDL)
+  - Used Operators for calculations and complex logic.
 - Simulated use cases like event scheduling, doping checks, ticket analysis
 
 ---
