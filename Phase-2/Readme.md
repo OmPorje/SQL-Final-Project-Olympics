@@ -1,4 +1,4 @@
-# 🏅 Olympics SQL Database Project
+# 🏅 Olympics SQL Database Project - Phase 2
 
 A comprehensive relational database project to model and analyze Olympic Games data. This project is organized in **multiple phases**, focusing on real-world database design, querying, and advanced SQL operations.
 
