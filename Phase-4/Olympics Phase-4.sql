@@ -251,9 +251,23 @@ END;
 //
 DELIMITER ;
 
--- 11.
--- 12.
 CALL update_duration(1, 90);
+
+-- 11. Rank sports by average duration within each category (longest match gets rank 1)
+SELECT 
+    sport_name,
+    sport_category,
+    typical_duration_minutes,
+    RANK() OVER (PARTITION BY sport_category ORDER BY typical_duration_minutes DESC) AS duration_rank_in_category
+FROM Sports;
+
+-- 12. Use LAG to calculate the gap in years between when sports were added to the Olympics
+SELECT 
+    sport_name,
+    olympic_since_year,
+    LAG(olympic_since_year) OVER (ORDER BY olympic_since_year) AS previous_sport_year,
+    olympic_since_year - LAG(olympic_since_year) OVER (ORDER BY olympic_since_year) AS year_gap
+FROM Sports;
 
 -- 13. Grant SELECT access to 'coach' user
 GRANT SELECT ON Sports TO 'coach'@'localhost';
@@ -389,10 +403,9 @@ END;
 //
 DELIMITER ;
 
--- 10. Call procedure to add athlete
 CALL add_athlete('Lia', 'Thomas', 'Female', '1999-05-21', 3, 2, 180, 72, 'An Olympic swimmer.');
 
--- 11. Procedure to update weight of athlete
+-- 10. Procedure to update weight of athlete
 DELIMITER //
 CREATE PROCEDURE update_athlete_weight(IN aid INT, IN new_weight INT)
 BEGIN
@@ -401,8 +414,28 @@ END;
 //
 DELIMITER ;
 
--- 12. Call update procedure
 CALL update_athlete_weight(1, 75);
+
+-- 11. Rank athletes by their height within each sport
+SELECT 
+    athlete_id,
+    first_name,
+    last_name,
+    sport_id,
+    height_cm,
+    RANK() OVER (PARTITION BY sport_id ORDER BY height_cm DESC) AS height_rank_in_sport
+FROM Athletes;
+
+-- 12. Use LAG to calculate age difference based on date of birth within each sport
+SELECT 
+    athlete_id,
+    first_name,
+    last_name,
+    sport_id,
+    date_of_birth,
+    LAG(date_of_birth) OVER (PARTITION BY sport_id ORDER BY date_of_birth) AS previous_athlete_dob,
+    DATEDIFF(date_of_birth, LAG(date_of_birth) OVER (PARTITION BY sport_id ORDER BY date_of_birth)) AS age_gap_days
+FROM Athletes;
 
 -- 13. Grant SELECT access to 'coach' user
 GRANT SELECT ON Athletes TO 'coach'@'localhost';
@@ -532,10 +565,9 @@ END;
 //
 DELIMITER ;
 
--- 10. Call the procedure
 CALL add_olympics(2028, 'Summer', 'Los Angeles', 1, '2028-07-14', '2028-07-30', 32, 11000, 'Together for a better future');
 
--- 11. Stored procedure to update slogan
+-- 10. Stored procedure to update slogan
 DELIMITER //
 CREATE PROCEDURE update_olympic_slogan(IN oid INT, IN new_slogan VARCHAR(100))
 BEGIN
@@ -544,8 +576,26 @@ END;
 //
 DELIMITER ;
 
--- 12. Call procedure to update slogan
 CALL update_olympic_slogan(1, 'Stronger Together');
+
+-- 11. Rank Olympic editions by the number of athletes in each season (Summer/Winter)
+SELECT 
+    olympic_id,
+    year,
+    season,
+    number_of_athletes,
+    RANK() OVER (PARTITION BY season ORDER BY number_of_athletes DESC) AS athlete_rank_in_season
+FROM Olympics;
+
+-- 12. Calculate year difference between consecutive Olympic Games
+SELECT 
+    olympic_id,
+    year,
+    season,
+    LAG(year) OVER (PARTITION BY season ORDER BY year) AS previous_olympic_year,
+    year - LAG(year) OVER (PARTITION BY season ORDER BY year) AS year_gap
+FROM Olympics;
+
 
 -- 13. Grant SELECT access on Olympics to user 'reporter'
 GRANT SELECT ON Olympics TO 'reporter'@'localhost';
@@ -666,10 +716,9 @@ END;
 //
 DELIMITER ;
 
--- 10. Call procedure to insert a new event
 CALL add_event('100m Sprint Final', 1, 'Men', 'Final', '100m', 2, 'Time', 1, 'National Stadium');
 
--- 11. Stored procedure to update venue
+-- 10. Stored procedure to update venue
 DELIMITER //
 CREATE PROCEDURE update_event_venue(IN eid INT, IN new_venue VARCHAR(100))
 BEGIN
@@ -678,8 +727,21 @@ END;
 //
 DELIMITER ;
 
--- 12. Call procedure to update venue
 CALL update_event_venue(1, 'Olympic Arena');
+
+-- 11. Rank events by number of rounds within the same sport
+SELECT 
+    event_id,
+    event_name,
+    sport_id,
+    number_of_rounds,
+    RANK() OVER (PARTITION BY sport_id ORDER BY number_of_rounds DESC) AS round_rank_within_sport
+FROM Events;
+
+-- 12. Show Previous event name
+SELECT event_name,
+    LAG(event_name) OVER (ORDER BY event_id) AS previous_event
+FROM Events;
 
 -- 13. Grant SELECT on Events table to 'analyst'
 GRANT SELECT ON Events TO 'analyst'@'localhost';
@@ -799,10 +861,9 @@ END;
 //
 DELIMITER ;
 
--- 10. Call procedure to add a venue
 CALL add_venue('Oceanic Aquatics Center', 'Tokyo', 12000, 'Aquatic', 'Water', 2018, 2020, 5, 2);
 
--- 11. Stored procedure to update a venue's capacity
+-- 10. Stored procedure to update a venue's capacity
 DELIMITER //
 CREATE PROCEDURE update_venue_capacity(IN vid INT, IN new_cap INT)
 BEGIN
@@ -811,8 +872,21 @@ END;
 //
 DELIMITER ;
 
--- 12. Call the update capacity procedure
 CALL update_venue_capacity(1, 55000);
+
+-- 11. Rank venues by capacity within each venue type (e.g., Indoor, Outdoor)
+SELECT 
+    venue_id,
+    venue_name,
+    venue_type,
+    capacity,
+    RANK() OVER (PARTITION BY venue_type ORDER BY capacity DESC) AS capacity_rank_within_type
+FROM Venues;
+
+-- 12. Rank venues by capacity within each venue type (e.g., Indoor, Outdoor)
+SELECT venue_id, venue_name, venue_type, capacity,
+    RANK() OVER (PARTITION BY venue_type ORDER BY capacity DESC) AS capacity_rank_within_type
+FROM Venues;
 
 -- 13. Grant SELECT on Venues to 'viewer'
 GRANT SELECT ON Venues TO 'viewer'@'localhost';
@@ -939,7 +1013,6 @@ END;
 //
 DELIMITER ;
 
--- 10. Call procedure to add a team
 CALL add_team('Dream Warriors', 1, 2, 3, 15, 7, 'John Doe', 'Jane Smith', 1995);
 
 -- 11. Stored procedure to update team captain
@@ -953,8 +1026,17 @@ END;
 //
 DELIMITER ;
 
--- 12. Call procedure to update team captain
 CALL update_team_captain(1, 'Michael Johnson');
+
+-- 11. Rank teams by number of medals
+SELECT team_name, sport_id, total_medals,
+    RANK() OVER (ORDER BY total_medals DESC) AS medal_rank
+FROM Teams;
+
+-- 12.  Show Previous Team's Formation Year 
+SELECT team_name, formation_year,
+    LAG(formation_year) OVER (ORDER BY formation_year) AS previous_team_formation_year
+FROM Teams;
 
 -- 13. Grant SELECT permission on Teams to 'viewer'
 GRANT SELECT ON Teams TO 'viewer'@'localhost';
@@ -1086,10 +1168,9 @@ END;
 //
 DELIMITER ;
 
--- 10. Call procedure to insert a medal
 CALL add_medal(1, 5, 'Gold', NULL, 1, 1, '2024-07-28', 'Men\'s 100m', 2);
 
--- 11. Stored procedure to update medal type
+-- 10. Stored procedure to update medal type
 DELIMITER //
 CREATE PROCEDURE update_medal_type(
   IN mid INT, IN new_type ENUM('Gold','Silver','Bronze')
@@ -1100,8 +1181,17 @@ END;
 //
 DELIMITER ;
 
--- 12. Call procedure to update medal type
 CALL update_medal_type(3, 'Silver');
+
+  -- 11. Get the previous medal date for the same athlete
+SELECT athlete_id, medal_type,medal_date,
+LAG(medal_date) OVER (PARTITION BY athlete_id ORDER BY medal_date) AS previous_medal_date
+FROM Medals;
+
+-- 12. Rank Athletes by Number of Medals Won in Order of Medal Date
+SELECT athlete_id, medal_type, medal_date,
+    ROW_NUMBER() OVER (PARTITION BY athlete_id ORDER BY medal_date) AS medal_rank_for_athlete
+FROM Medals;
 
 -- 13. Grant SELECT permission on Medals to 'reporter'
 GRANT SELECT ON Medals TO 'reporter'@'localhost';
@@ -1224,10 +1314,9 @@ END;
 //
 DELIMITER ;
 
--- 10. Call procedure to insert new coach
 CALL add_coach('Anita', 'Rao', 'Female', '1980-05-23', 1, 2, NULL, 15, 'Level A');
 
--- 11. Stored procedure to update team assignment
+-- 10. Stored procedure to update team assignment
 DELIMITER //
 CREATE PROCEDURE assign_team_to_coach(IN cid INT, IN tid INT)
 BEGIN
@@ -1236,8 +1325,23 @@ END;
 //
 DELIMITER ;
 
--- 12. Call to assign a coach to a team
 CALL assign_team_to_coach(1, 3);
+
+-- 11. Rank coaches by experience within each sport 
+SELECT 
+    coach_id,
+    first_name,
+    last_name,
+    sport_id,
+    years_of_experience,
+    certification_level,
+    RANK() OVER (PARTITION BY sport_id ORDER BY years_of_experience DESC) AS experience_rank_in_sport
+FROM Coaches;
+
+-- 12. Show the certification level of the previous coach (based on DOB) within each sport
+   SELECT coach_id, first_name, last_name, sport_id,years_of_experience, certification_level,
+    LAG(certification_level) OVER (PARTITION BY sport_id ORDER BY date_of_birth) AS previous_coach_certification
+FROM Coaches;
 
 -- 13. Grant SELECT permission on Coaches to 'viewer'
 GRANT SELECT ON Coaches TO 'viewer'@'localhost';
@@ -1359,7 +1463,6 @@ END;
 //
 DELIMITER ;
 
--- 10. Call the procedure to insert a stadium
 CALL add_stadium('Sunshine Stadium', 'Tokyo', 2, 60000, 1988, 'Outdoor', TRUE, 'Grass', 1);
 
 -- 11. Stored procedure to update stadium surface type
@@ -1371,8 +1474,17 @@ END;
 //
 DELIMITER ;
 
--- 12. Call procedure to update surface type
 CALL update_stadium_surface(1, 'Synthetic');
+
+-- 11. Rank stadiums by their capacity within the same country
+SELECT stadium_id, stadium_name, country_id, capacity,
+    RANK() OVER (PARTITION BY country_id ORDER BY capacity DESC) AS capacity_rank_in_country
+FROM Stadiums;
+
+ -- 12. Get the build year of the previous stadium in the same country
+SELECT stadium_id, stadium_name, country_id, year_built,
+    LAG(year_built) OVER (PARTITION BY country_id ORDER BY year_built) AS previous_stadium_year
+FROM Stadiums;
 
 -- 13. Grant SELECT on Stadiums to user 'analyst'
 GRANT SELECT ON Stadiums TO 'analyst'@'localhost';
@@ -1497,10 +1609,9 @@ END;
 //
 DELIMITER ;
 
--- 10. Call stored procedure to insert sponsor
 CALL add_sponsor('Nike', 'Global', 1, 'contact@nike.com', '1234567890', 2500000.00, 1, 'Athlete', 101);
 
--- 11. Stored procedure to update sponsor amount
+-- 10. Stored procedure to update sponsor amount
 DELIMITER //
 CREATE PROCEDURE update_sponsor_amount(IN sid INT, IN new_amount DECIMAL(15,2))
 BEGIN
@@ -1508,9 +1619,17 @@ BEGIN
 END;
 //
 DELIMITER ;
-
--- 12. Call to update sponsor amount
 CALL update_sponsor_amount(1, 3000000.00);
+
+-- 11. Rank sponsors by amount within the same Olympic edition
+SELECT sponsor_id, sponsor_name, olympic_id, amount_sponsored,
+    RANK() OVER (PARTITION BY olympic_id ORDER BY amount_sponsored DESC) AS sponsor_rank_in_olympics
+FROM Sponsors;
+
+-- 12. Show the sponsor who paid just before this one (based on amount)
+SELECT sponsor_id, sponsor_name, amount_sponsored,
+    LAG(sponsor_name) OVER (ORDER BY amount_sponsored DESC) AS previous_sponsor
+FROM Sponsors;
 
 -- 13. Grant SELECT access on Sponsors to analyst
 GRANT SELECT ON Sponsors TO 'analyst'@'localhost';
@@ -1639,7 +1758,6 @@ END;
 //
 DELIMITER ;
 
--- 10. Call the add_match procedure
 CALL add_match(1, 10, 11, '2025-07-21', '10:00:00', '11:30:00', 3);
 
 -- 11. Procedure to update match winner and status
@@ -1653,8 +1771,18 @@ END;
 //
 DELIMITER ;
 
--- 12. Call the update_match_result procedure
 CALL update_match_result(1, 10);
+
+-- 11. Rank all completed matches based on how long they lasted 
+SELECT match_id, event_id, start_time, end_time,
+    RANK() OVER (ORDER BY TIMESTAMPDIFF(MINUTE, start_time, end_time) DESC) AS duration_rank
+FROM Matches
+WHERE match_status = 'Completed';
+
+-- 12. Show the date of the next match within the same event.
+SELECT match_id, event_id, match_date,
+    LEAD(match_date) OVER (PARTITION BY event_id ORDER BY match_date) AS previous_match_date
+FROM Matches;
 
 -- 13. Grant SELECT on Matches to analyst
 GRANT SELECT ON Matches TO 'analyst'@'localhost';
@@ -1777,10 +1905,9 @@ END;
 //
 DELIMITER ;
 
--- 10. Call procedure to insert sample broadcast
 CALL add_broadcast(2, 'ESPN', 1, 'English', '2025-07-22', '14:00:00', '16:00:00', 'TV', 2500000);
 
--- 11. Procedure to update viewership estimate
+-- 10. Procedure to update viewership estimate
 DELIMITER //
 CREATE PROCEDURE update_viewership(IN bid INT, IN new_viewers INT)
 BEGIN
@@ -1789,8 +1916,17 @@ END;
 //
 DELIMITER ;
 
--- 12. Call to update viewership
 CALL update_viewership(1, 3000000);
+
+-- 11. Rank broadcasts by estimated viewership within each broadcast platform
+SELECT broadcast_id, broadcaster_name, platform, viewership_estimate,
+    RANK() OVER (PARTITION BY platform ORDER BY viewership_estimate DESC) AS viewership_rank_in_platform
+FROM Broadcasts;
+
+-- 12. Display the next broadcast date for the same event using LAG
+SELECT broadcast_id,event_id, broadcast_date,
+    LAG(broadcast_date) OVER (PARTITION BY event_id ORDER BY broadcast_date) AS previous_broadcast_date
+FROM Broadcasts;
 
 -- 13. Grant SELECT access to analyst
 GRANT SELECT ON Broadcasts TO 'analyst'@'localhost';
@@ -1914,10 +2050,9 @@ END;
 //
 DELIMITER ;
 
--- 10. Call procedure to add a new referee
 CALL add_referee('Rajiv Kumar', 'Male', 1, 12, 3, TRUE, 'rajiv.k@example.com', 4, 'Active');
 
--- 11. Procedure to update referee status
+-- 10. Procedure to update referee status
 DELIMITER //
 CREATE PROCEDURE update_referee_status(IN ref_id INT, IN new_status ENUM('Active','Retired','Suspended'))
 BEGIN
@@ -1926,8 +2061,17 @@ END;
 //
 DELIMITER ;
 
--- 12. Call to update referee status
 CALL update_referee_status(1, 'Retired');
+
+-- 11. Rank referees by their years of experience within each sport
+SELECT referee_id,full_name,sport_id,experience_years,
+    RANK() OVER (PARTITION BY sport_id ORDER BY experience_years DESC) AS experience_rank_in_sport
+FROM Referees;
+
+-- 12. Display the name of the previous referee in the same sport (sorted by experience)
+SELECT referee_id,full_name,sport_id,experience_years,
+    LAG(full_name) OVER (PARTITION BY sport_id ORDER BY experience_years DESC) AS previous_referee
+FROM Referees;
 
 -- 13. Grant SELECT access to referee table
 GRANT SELECT ON Referees TO 'analyst'@'localhost';
@@ -2051,10 +2195,9 @@ END;
 //
 DELIMITER ;
 
--- 10. Call the procedure to insert a schedule
 CALL add_schedule(2, 1, 5, '2025-07-18', '09:00:00', '11:00:00', 'Morning');
 
--- 11. Procedure to update schedule status
+-- 10. Procedure to update schedule status
 DELIMITER //
 CREATE PROCEDURE update_schedule_status(IN sch_id INT, IN new_status ENUM('Scheduled','Completed','Cancelled'))
 BEGIN
@@ -2063,8 +2206,18 @@ END;
 //
 DELIMITER ;
 
--- 12. Call the procedure to mark an event as completed
 CALL update_schedule_status(3, 'Completed');
+
+-- 11. Rank scheduled events by their duration (in minutes) within each sport
+SELECT schedule_id, sport_id, start_time, end_time, 
+TIMESTAMPDIFF(MINUTE, start_time, end_time) AS duration_minutes, 
+RANK() OVER (PARTITION BY sport_id ORDER BY TIMESTAMPDIFF(MINUTE, start_time, end_time) DESC) AS duration_rank_in_sport 
+FROM Schedules WHERE status = 'Scheduled';
+
+-- 12. Show the previous scheduled event date at the same venue
+SELECT schedule_id, venue_id, scheduled_date, 
+LAG(scheduled_date) OVER (PARTITION BY venue_id ORDER BY scheduled_date) AS previous_event_date_at_venue 
+FROM Schedules;
 
 -- 13. Grant SELECT access on schedules table to analyst
 GRANT SELECT ON Schedules TO 'analyst'@'localhost';
@@ -2188,10 +2341,9 @@ END;
 //
 DELIMITER ;
 
--- 10. Call the procedure to add a judge
 CALL add_judge('Alex Kim', 'Male', 3, 2, 'Level A', 12, TRUE, 10);
 
--- 11. Procedure: Update judge status
+-- 10. Procedure: Update judge status
 DELIMITER //
 CREATE PROCEDURE update_judge_status(IN j_id INT, IN new_status ENUM('Active','Retired','Suspended'))
 BEGIN
@@ -2200,8 +2352,17 @@ END;
 //
 DELIMITER ;
 
--- 12. Call procedure to suspend a judge
 CALL update_judge_status(5, 'Suspended');
+
+-- 11. Rank judges by years of experience within each sport
+SELECT judge_id, full_name, sport_id, years_of_experience, 
+DENSE_RANK() OVER (PARTITION BY sport_id ORDER BY years_of_experience DESC) AS experience_rank_in_sport 
+FROM Judges;
+
+-- 12.Show the previous judge's name in the same sport based on experience
+SELECT judge_id, full_name, sport_id, years_of_experience, 
+LAG(full_name) OVER (PARTITION BY sport_id ORDER BY years_of_experience DESC) AS previous_judge_name 
+FROM Judges;
 
 -- 13. Grant SELECT and INSERT access on Judges table to reviewer
 GRANT SELECT, INSERT ON Judges TO 'reviewer'@'localhost';
@@ -2325,10 +2486,9 @@ END;
 //
 DELIMITER ;
 
--- 10. Call the add_score procedure
 CALL add_score(5, 2, 3, 9.75, 'Artistic', 'Excellent execution');
 
--- 11. Procedure: Update score status
+-- 10. Procedure: Update score status
 DELIMITER //
 CREATE PROCEDURE update_score_status(IN s_id INT, IN new_status ENUM('Submitted','Reviewed','Final'))
 BEGIN
@@ -2337,8 +2497,17 @@ END;
 //
 DELIMITER ;
 
--- 12. Call the procedure to finalize a score
 CALL update_score_status(7, 'Final');
+
+-- 11. Use DENSE_RANK to rank scores within each event 
+SELECT score_id, athlete_id, event_id, score, 
+DENSE_RANK() OVER (PARTITION BY event_id ORDER BY score DESC) AS dense_rank_in_event 
+FROM Scores;
+
+-- 12. Use LEAD to get the next score given by the same judge 
+SELECT score_id, judge_id, athlete_id, score, score_date, 
+LEAD(score) OVER (PARTITION BY judge_id ORDER BY score_date) AS next_score_by_judge 
+FROM Scores;
 
 -- 13. Grant SELECT and INSERT on Scores table to user 'scorer'
 GRANT SELECT, INSERT ON Scores TO 'scorer'@'localhost';
@@ -2470,10 +2639,9 @@ END;
 //
 DELIMITER ;
 
--- 10. Call the procedure to add ticket
 CALL add_ticket(2, 'Om Porje', 'om@example.com', 'VIP', 'A12', 1500.00, 'Paid', 'Online');
 
--- 11. Procedure: Cancel a ticket
+-- 10. Procedure: Cancel a ticket
 DELIMITER //
 CREATE PROCEDURE cancel_ticket(IN t_id INT)
 BEGIN
@@ -2484,8 +2652,17 @@ END;
 //
 DELIMITER ;
 
--- 12. Call the procedure to cancel ticket ID 101
 CALL cancel_ticket(101);
+
+-- 11. Assign a unique row number to each ticket purchase within the same event (
+SELECT ticket_id, event_id, buyer_name, purchase_date, 
+ROW_NUMBER() OVER (PARTITION BY event_id ORDER BY purchase_date) AS ticket_sequence 
+FROM ticket_sales;
+
+-- 12. Divide tickets into 3 price-based groups for each ticket type
+SELECT ticket_id, ticket_type, price, 
+NTILE(3) OVER (PARTITION BY ticket_type ORDER BY price) AS price_tier 
+FROM ticket_sales;
 
 -- 13. Grant SELECT, INSERT to 'ticket_agent'
 GRANT SELECT, INSERT ON ticket_sales TO 'ticket_agent'@'localhost';
@@ -2619,10 +2796,9 @@ END;
 //
 DELIMITER ;
 
--- 10. Call procedure to insert new ceremony
 CALL add_ceremony(3, 'Opening', '2024-07-23', '20:00:00', '23:00:00', 1, 'France', 'Daft Punk', 'Unity in Diversity');
 
--- 11. Procedure: Update ceremony performer
+-- 10. Procedure: Update ceremony performer
 DELIMITER //
 CREATE PROCEDURE update_performer(IN c_id INT, IN performer_name VARCHAR(100))
 BEGIN
@@ -2631,8 +2807,17 @@ END;
 //
 DELIMITER ;
 
--- 12. Call procedure to update a performer
 CALL update_performer(5, 'Coldplay');
+
+-- 11. Assign a unique row number to ceremonies within each Olympic edition ordered by ceremony time
+SELECT ceremony_id, olympic_id, ceremony_type, start_time, 
+ROW_NUMBER() OVER (PARTITION BY olympic_id ORDER BY start_time) AS ceremony_order 
+FROM ceremonies;
+
+-- 12. Get the first ceremony type that occurred in each Olympics edition
+SELECT ceremony_id, olympic_id, ceremony_type, ceremony_date, 
+FIRST_VALUE(ceremony_type) OVER (PARTITION BY olympic_id ORDER BY ceremony_date) AS first_ceremony 
+FROM ceremonies;
 
 -- 13. Grant SELECT, INSERT to event_organizer
 GRANT SELECT, INSERT ON ceremonies TO 'event_organizer'@'localhost';
@@ -2774,10 +2959,9 @@ END;
 //
 DELIMITER ;
 
--- 10. Call the above procedure
 CALL add_medical_record(2, '2025-06-05', 'Sprained ankle', 'Rest and physiotherapy', 'Dr. Lee', 'Olympic Health Center', 'Pending', TRUE, 'Follow-up in 10 days');
 
--- 11. Procedure: Mark athlete fit after treatment
+-- 10. Procedure: Mark athlete fit after treatment
 DELIMITER //
 CREATE PROCEDURE update_clearance(IN a_id INT)
 BEGIN
@@ -2788,8 +2972,17 @@ END;
 //
 DELIMITER ;
 
--- 12. Call procedure to mark athlete fit
 CALL update_clearance(4);
+
+-- 11. Number each medical checkup for an athlete in chronological order
+SELECT record_id, athlete_id, checkup_date, 
+ROW_NUMBER() OVER (PARTITION BY athlete_id ORDER BY checkup_date) AS checkup_number 
+FROM medical_records;
+
+-- 12. Retrieve the most recent fitness clearance status for each athlete
+SELECT record_id, athlete_id, checkup_date, fitness_clearance, 
+LAST_VALUE(fitness_clearance) OVER (PARTITION BY athlete_id ORDER BY checkup_date ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS latest_clearance 
+FROM medical_records;
 
 -- 13. Grant SELECT, INSERT on medical_records to medical_staff
 GRANT SELECT, INSERT ON medical_records TO 'medical_staff'@'localhost';
@@ -2937,8 +3130,12 @@ END;
 //
 DELIMITER ;
 
--- 10. Call procedure to update notes
 CALL update_training_notes(5, 'Improved technique in sprint');
+
+-- 10. Get the first coach assigned to each athlete based on earliest session date
+SELECT session_id, athlete_id, coach_id, session_date, 
+FIRST_VALUE(coach_id) OVER (PARTITION BY athlete_id ORDER BY session_date) AS first_coach 
+FROM training_sessions;
 
 -- 11. Grant SELECT and INSERT privileges to trainers role
 GRANT SELECT, INSERT ON training_sessions TO 'trainers'@'localhost';
@@ -3098,10 +3295,9 @@ BEGIN
 END //
 DELIMITER ;
 
--- 10. Call procedure to add volunteer
 CALL AddVolunteer('John Doe', 28, 'Male', '9876543210', 'john@example.com', 'Main Gate', 'Check-in Coordinator', 'Morning', 'Mon,Tue,Wed');
 
--- 11. Stored procedure: Update volunteer email
+-- 10. Stored procedure: Update volunteer email
 DELIMITER //
 CREATE PROCEDURE UpdateVolunteerEmail(IN v_id INT, IN new_email VARCHAR(100))
 BEGIN
@@ -3111,8 +3307,17 @@ BEGIN
 END //
 DELIMITER ;
 
--- 12. Call procedure to update email
 CALL UpdateVolunteerEmail(1, 'updated_email@example.com');
+
+-- 11.Assign a unique number to each volunteer within their assigned shift
+SELECT volunteer_id, full_name, shift_time, 
+ROW_NUMBER() OVER (PARTITION BY shift_time ORDER BY full_name) AS shift_position 
+FROM volunteers;
+
+-- 12. Divide volunteers into 3 age-based groups within each shift
+SELECT volunteer_id, full_name, age, shift_time, 
+NTILE(3) OVER (PARTITION BY shift_time ORDER BY age) AS age_group 
+FROM volunteers;
 
 -- 13. Grant SELECT on volunteers to a specific user
 GRANT SELECT ON volunteers TO 'report_user'@'localhost';
@@ -3174,12 +3379,14 @@ BEGIN
 END //
 DELIMITER ;
 
--- Table 23: 
+-- Table 23: Security Staff
 -- 1. View: Night shift staff
 CREATE VIEW Night_Shift_Staff AS
 SELECT staff_id, full_name, assigned_location
 FROM security_staff
 WHERE shift_time = 'Night';
+
+SELECT * FROM Night_Shift_Staff;
 
 -- 2. View: Staff by duty type
 CREATE VIEW Staff_By_Duty AS
@@ -3245,10 +3452,9 @@ BEGIN
 END //
 DELIMITER ;
 
--- 10. Call procedure to insert staff
 CALL AddSecurityStaff('Arjun Patel', 32, 'Male', '9876543210', 'arjun@example.com', 'Stadium Gate', 'Morning', 'Entry Check', 'Raj Singh');
 
--- 11. Procedure: Update shift
+-- 10. Procedure: Update shift
 DELIMITER //
 CREATE PROCEDURE UpdateStaffShift(IN sid INT, IN new_shift ENUM('Morning','Afternoon','Night'))
 BEGIN
@@ -3256,8 +3462,17 @@ BEGIN
 END //
 DELIMITER ;
 
--- 12. Call procedure to update shift
 CALL UpdateStaffShift(3, 'Night');
+
+-- 11. Assign a sequential number to each security staff member in their shift
+SELECT staff_id, full_name, shift_time, 
+ROW_NUMBER() OVER (PARTITION BY shift_time ORDER BY full_name) AS shift_rank 
+FROM security_staff;
+
+-- 12. Rank security staff by age in each assigned location
+SELECT staff_id, full_name, assigned_location, age, 
+DENSE_RANK() OVER (PARTITION BY assigned_location ORDER BY age DESC) AS age_rank_in_location 
+FROM security_staff;
 
 -- 13. Grant SELECT on security_staff to reports user
 GRANT SELECT ON security_staff TO 'reports_user'@'localhost';
@@ -3319,7 +3534,7 @@ BEGIN
 END //
 DELIMITER ;
 
--- Table 24: 
+-- Table 24: Media Coverage
 -- 1. View showing only live coverages
 CREATE VIEW Live_Coverage AS
 SELECT media_house, reporter_name, event_covered
@@ -3462,16 +3677,10 @@ FOR EACH ROW
 INSERT INTO media_coverage_log (coverage_id, media_house)
 VALUES (NEW.coverage_id, NEW.media_house);
 
--- 19. Trigger to prevent future coverage dates
-CREATE TRIGGER PreventFutureCoverageDate
-BEFORE INSERT ON media_coverage
-FOR EACH ROW
-BEGIN
-    IF NEW.coverage_date > CURDATE() THEN
-        SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'Coverage date cannot be in the future.';
-    END IF;
-END;
+-- 19. Assign a sequential number to each coverage report by media house ordered by date
+SELECT coverage_id, media_house, coverage_date, 
+ROW_NUMBER() OVER (PARTITION BY media_house ORDER BY coverage_date) AS report_number 
+FROM media_coverage;
 
 -- 20. Trigger to auto-capitalize media house name
 CREATE TRIGGER CapitalizeMediaHouse
@@ -3479,7 +3688,7 @@ BEFORE INSERT ON media_coverage
 FOR EACH ROW
 SET NEW.media_house = UPPER(NEW.media_house);
 
--- Table 25: 
+-- Table 25: Doping Test
 -- 1. View of all positive doping cases
 CREATE VIEW Positive_Tests AS
 SELECT test_id, athlete_id, sport, test_date, substance_found
@@ -3625,23 +3834,11 @@ FOR EACH ROW
 INSERT INTO doping_log (test_id, action_type)
 VALUES (NEW.test_id, 'INSERT');
 
--- 19. Prevent inserting test with future date
-CREATE TRIGGER PreventFutureTestDate
-BEFORE INSERT ON doping_tests
-FOR EACH ROW
-BEGIN
-    IF NEW.test_date > CURDATE() THEN
-        SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'Test date cannot be in the future';
-    END IF;
-END;
+-- 19. Divide all doping tests into 4 time-based groups for analysis
+SELECT test_id, athlete_id, test_date, NTILE(4) OVER (ORDER BY test_date) AS time_quartile FROM doping_tests;
 
--- 20. Automatically set remarks for positive results with no remarks
-CREATE TRIGGER SetDefaultPositiveRemark
-BEFORE INSERT ON doping_tests
-FOR EACH ROW
-BEGIN
-    IF NEW.result = 'Positive' AND NEW.remarks IS NULL THEN
-        SET NEW.remarks = 'Positive result - further review needed';
-    END IF;
-END;
+-- 20. Number each doping test per athlete by test date
+SELECT test_id, athlete_id, test_date, 
+ROW_NUMBER() OVER (PARTITION BY athlete_id ORDER BY test_date) AS test_sequence 
+FROM doping_tests;
+
