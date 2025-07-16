@@ -26,18 +26,14 @@ REFERENCES Countries(country_id)
 ON DELETE CASCADE
 ON UPDATE CASCADE;
 
--- 6️: Join 'Countries' and 'Athletes' to list athletes with their country and name
-SELECT a.first_name, a.last_name,c.country_name
-FROM athletes a
-JOIN Countries c ON a.country_id = c.country_id
-WHERE c.language = 'English';
+-- 6️: Select countries with their country code and continent
+SELECT country_id, country_name, continent, country_code
+FROM Countries;
 
--- 7️: Subquery to find countries with above average GDP
+-- 7️: Find top 5 countries with highest GDP
 SELECT country_name, gdp
 FROM Countries
-WHERE gdp > (
-    SELECT AVG(gdp) FROM Countries
-);
+ORDER BY gdp DESC LIMIT 5;
 
 -- 8: Use IN and LIKE operators to filter countries
 SELECT country_name
